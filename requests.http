@@ -1,0 +1,165 @@
+@baseUrl = https://localhost:5001
+@userId = watch-123
+@matchId = {{createMatch.response.body.matchId}}
+
+### 1. Upsert User
+POST {{baseUrl}}/users/{{userId}}
+Content-Type: application/json
+
+{
+  "name": "Juan Pérez",
+  "email": "juan@example.com"
+}
+
+### 2. Create Match
+# @name createMatch
+POST {{baseUrl}}/matches
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "mode": "PRO",
+  "goldenPoint": true,
+  "players": ["Juan", "Pedro", "Luis", "Ana"]
+}
+
+### 3. Get Active Match
+GET {{baseUrl}}/matches/active?userId={{userId}}
+
+### 4. Register Point (Team A wins)
+PUT {{baseUrl}}/matches/{{matchId}}/point
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "winner": "A",
+  "expectedVersion": 0,
+  "newState": {
+    "mode": "PRO",
+    "goldenPoint": true,
+    "players": ["Juan", "Pedro", "Luis", "Ana"],
+    "score": {
+      "teamA": { "games": 1, "sets": 0, "points": 15 },
+      "teamB": { "games": 0, "sets": 0, "points": 0 }
+    },
+    "currentSet": 1,
+    "history": [
+      { "action": "point", "winner": "A", "timestamp": "2026-01-29T16:00:00Z" }
+    ]
+  }
+}
+
+### 5. Register Another Point (Team B wins)
+PUT {{baseUrl}}/matches/{{matchId}}/point
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "winner": "B",
+  "expectedVersion": 1,
+  "newState": {
+    "mode": "PRO",
+    "goldenPoint": true,
+    "players": ["Juan", "Pedro", "Luis", "Ana"],
+    "score": {
+      "teamA": { "games": 1, "sets": 0, "points": 15 },
+      "teamB": { "games": 0, "sets": 0, "points": 15 }
+    },
+    "currentSet": 1,
+    "history": [
+      { "action": "point", "winner": "A", "timestamp": "2026-01-29T16:00:00Z" },
+      { "action": "point", "winner": "B", "timestamp": "2026-01-29T16:01:00Z" }
+    ]
+  }
+}
+
+### 6. Undo Last Point
+POST {{baseUrl}}/matches/{{matchId}}/undo
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "expectedVersion": 2,
+  "newState": {
+    "mode": "PRO",
+    "goldenPoint": true,
+    "players": ["Juan", "Pedro", "Luis", "Ana"],
+    "score": {
+      "teamA": { "games": 1, "sets": 0, "points": 15 },
+      "teamB": { "games": 0, "sets": 0, "points": 0 }
+    },
+    "currentSet": 1,
+    "history": [
+      { "action": "point", "winner": "A", "timestamp": "2026-01-29T16:00:00Z" }
+    ]
+  }
+}
+
+### 7. Update State (Snapshot)
+PUT {{baseUrl}}/matches/{{matchId}}/state
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "expectedVersion": 3,
+  "state": {
+    "mode": "PRO",
+    "goldenPoint": true,
+    "players": ["Juan", "Pedro", "Luis", "Ana"],
+    "score": {
+      "teamA": { "games": 2, "sets": 0, "points": 30 },
+      "teamB": { "games": 1, "sets": 0, "points": 15 }
+    },
+    "currentSet": 1,
+    "history": []
+  }
+}
+
+### 8. Finish Match
+POST {{baseUrl}}/matches/{{matchId}}/finish
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "won": true,
+  "expectedVersion": 4,
+  "finalStats": {
+    "duration": 3600,
+    "finalScore": "6-4,6-2",
+    "healthStats": {
+      "calories": 450,
+      "steps": 3000,
+      "heartRate": 145
+    }
+  }
+}
+
+### 9. Try to Create Another Match (Should Return Existing)
+POST {{baseUrl}}/matches
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "mode": "AMATEUR",
+  "goldenPoint": false,
+  "players": ["Test1", "Test2", "Test3", "Test4"]
+}
+
+### 10. Test Version Conflict
+PUT {{baseUrl}}/matches/{{matchId}}/point
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "winner": "A",
+  "expectedVersion": 0,
+  "newState": {
+    "mode": "PRO",
+    "goldenPoint": true,
+    "players": ["Juan", "Pedro", "Luis", "Ana"],
+    "score": {
+      "teamA": { "games": 1, "sets": 0 },
+      "teamB": { "games": 0, "sets": 0 }
+    }
+  }
+}
