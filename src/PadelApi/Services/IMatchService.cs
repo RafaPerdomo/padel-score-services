@@ -11,4 +11,5 @@ public interface IMatchService
     Task<MatchResponse> UndoAsync(Guid matchId, UndoRequest request);
     Task<MatchResponse> UpdateStateAsync(Guid matchId, UpdateStateRequest request);
     Task FinishMatchAsync(Guid matchId, FinishMatchRequest request);
+    Task DeleteActiveMatchAsync(string userId);
 }

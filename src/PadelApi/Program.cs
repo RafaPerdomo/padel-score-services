@@ -16,12 +16,22 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        builder => builder
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader());
+});
+
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IMatchRepository, MatchRepository>();
 builder.Services.AddScoped<IMatchService, MatchService>();
 
 var app = builder.Build();
 
+app.UseCors("AllowAll");
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -55,6 +65,13 @@ app.MapPost("/matches", async (CreateMatchRequest request, IMatchService matchSe
     return Results.Created($"/matches/{response.MatchId}", response);
 })
 .WithName("CreateMatch");
+
+app.MapDelete("/matches/active/{userId}", async (string userId, IMatchService matchService) =>
+{
+    await matchService.DeleteActiveMatchAsync(userId);
+    return Results.NoContent();
+})
+.WithName("DeleteActiveMatch");
 
 app.MapGet("/matches/active", async (string userId, IMatchService matchService) =>
 {

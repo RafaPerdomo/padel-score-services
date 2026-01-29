@@ -254,6 +254,20 @@ public class MatchService : IMatchService
         _logger.LogInformation("Match {MatchId} finished. Won: {Won}", matchId, request.Won);
     }
 
+    public async Task DeleteActiveMatchAsync(string userId)
+    {
+        var match = await _matchRepository.GetLiveMatchByUserIdAsync(userId);
+
+        if (match == null)
+        {
+            // Idempotent: if no active match, we consider it "deleted" successfully
+            return;
+        }
+
+        await _matchRepository.UpdateMatchStatusAsync(match.Id, "ABANDONED", null);
+        _logger.LogInformation("Match {MatchId} abandoned/deleted by request for user {UserId}", match.Id, userId);
+    }
+
     private async Task<Match> ValidateMatchOwnershipAndStatus(Guid matchId, string userId, string requiredStatus)
     {
         _logger.LogInformation("🔍 Validating match ownership - MatchId: {MatchId}, RequestUserId: '{UserId}'", matchId, userId);
