@@ -9,6 +9,9 @@ using PadelApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.UseUrls($"http://*:{port}");
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
@@ -21,6 +24,9 @@ var app = builder.Build();
 
 app.UseSwagger();
 app.UseSwaggerUI();
+
+app.MapGet("/health", () => Results.Ok("OK"));
+app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.MapPost("/users/{userId}", async (string userId, UpsertUserRequest request, IUserRepository userRepo) =>
 {
