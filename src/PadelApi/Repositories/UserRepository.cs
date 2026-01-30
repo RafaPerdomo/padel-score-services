@@ -50,4 +50,13 @@ public class UserRepository : IUserRepository
             throw new ConflictException("Email already exists");
         }
     }
+
+    public async Task<bool> ExistsAsync(string id)
+    {
+        await using var conn = new NpgsqlConnection(_connectionString);
+        return await conn.ExecuteScalarAsync<bool>(
+            "SELECT EXISTS(SELECT 1 FROM users WHERE id = @Id)",
+            new { Id = id }
+        );
+    }
 }

@@ -52,6 +52,13 @@ app.MapPost("/users/{userId}", async (string userId, UpsertUserRequest request, 
 })
 .WithName("UpsertUser");
 
+app.MapGet("/users/{userId}/exists", async (string userId, IUserRepository userRepo) =>
+{
+    var exists = await userRepo.ExistsAsync(userId);
+    return Results.Ok(new { exists });
+})
+.WithName("UserExists");
+
 app.MapPost("/matches", async (CreateMatchRequest request, IMatchService matchService) =>
 {
     var response = await matchService.CreateMatchAsync(request);
